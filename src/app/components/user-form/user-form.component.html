@@ -1,0 +1,33 @@
+<div class="card">
+  <div class="card-header" data-background-color="orange">
+    <h4 class="title">User aliases</h4>
+    <p class="category">Alias database for the users</p>
+  </div>
+  <div class="card-content">
+    <form name="user-form" (submit)="save()">
+      <div class="row">
+        <div class="col-sm-9">
+          <div class="form-group">
+            <label class="control-label">Username:</label>
+            <input type="text" class="form-control" [(ngModel)]="user.name" name="name">
+          </div>
+        </div>
+        <div class="col-sm-3">
+          <div class="form-group">
+            <label class="control-label">Seats:</label>
+            <input type="number" class="form-control" [(ngModel)]="user.seats" name="seats">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="control-label">Alias:</label>
+        <input type="text" class="form-control" [(ngModel)]="user.alias" name="alias">
+      </div>
+
+      <div class="text-right">
+        <button class="btn btn-primary btn" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>

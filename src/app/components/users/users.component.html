@@ -1,0 +1,20 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-6">
+        <admin-user-form [user]="editUser"></admin-user-form>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header" data-background-color="green">
+            <h4 class="title">User aliases</h4>
+            <p class="category">Alias database for the users</p>
+          </div>
+          <div class="card-content table-responsive">
+            <admin-users-list (modify)="editUser = $event"></admin-users-list>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

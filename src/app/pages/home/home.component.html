@@ -1,0 +1,13 @@
+<div class="wrapper">
+    <div class="sidebar" data-color='red' data-image="">
+        <admin-sidebar></admin-sidebar>
+        <div class="sidebar-background" style="background-image: url(../assets/img/sidebar-4.jpg)"></div>
+    </div>
+    <div class="main-panel">
+        <admin-navbar></admin-navbar>
+        <router-outlet></router-outlet>
+        <div *ngIf="isMaps('/maps')">
+            <admin-footer></admin-footer>
+        </div>
+    </div>
+</div>

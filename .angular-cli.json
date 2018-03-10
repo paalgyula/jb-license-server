@@ -19,9 +19,19 @@
       "testTsconfig": "tsconfig.spec.json",
       "prefix": "admin",
       "styles": [
-        "styles.sass"
+        "../node_modules/bootstrap/dist/css/bootstrap.min.css",
+        "sass/material-dashboard.scss",
+        "sass/styles.scss"
       ],
-      "scripts": [],
+      "scripts": [
+        "../node_modules/jquery/dist/jquery.min.js",
+        "../node_modules/bootstrap/dist/js/bootstrap.min.js",
+        "js/arrive.min.js",
+        "js/material.min.js",
+        "js/chartist.min.js",
+        "js/bootstrap-notify.js",
+        "js/demo.js"
+      ],
       "environmentSource": "environments/environment.ts",
       "environments": {
         "dev": "environments/environment.ts",
@@ -54,13 +64,13 @@
     }
   },
   "defaults": {
-    "styleExt": "sass",
+    "styleExt": "scss",
     "class": {
       "spec": false
     },
     "component": {
       "inlineStyle": true,
-      "inlineTemplate": true,
+      "inlineTemplate": false,
       "spec": false
     },
     "directive": {

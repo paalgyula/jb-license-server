@@ -1,0 +1,11 @@
+.login-card {
+    width: 400px;
+    position: relative;
+    margin: 0 auto;
+    padding-top: 8%;
+}
+
+.login-card img {
+    max-width: 50px !important;
+    float:right;
+}

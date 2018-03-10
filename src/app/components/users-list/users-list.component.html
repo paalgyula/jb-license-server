@@ -1,0 +1,25 @@
+<table class="table table-hover">
+  <thead class="">
+    <tr>
+      <th>Name</th>
+      <th>Alias</th>
+      <th>Seats</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let user of users">
+      <td>{{user.name}}</td>
+      <td>{{user.alias}}</td>
+      <td class="text-right">{{user.seats}}</td>
+      <td class="text-right">
+        <a (click)="edit(user)" class="btn btn-primary btn-simple btn-xs">
+          <i class="material-icons">edit</i>
+        </a>
+        <a href="#" class="btn btn-danger btn-simple btn-xs">
+          <i class="material-icons">close</i>
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
