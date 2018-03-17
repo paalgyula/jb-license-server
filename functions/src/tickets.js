@@ -13,19 +13,40 @@ const rsa = require('node-rsa')
 const xml = require('xml')
 const fs = require('fs')
 const path = require('path')
+
+const SIGN_KEY_PATH = './signkey.pem'
+
 //const logger = require('../server/logger')
 const logger = {
-    info: function(data) {
+    info: function (data) {
         console.log(`info:\t${data}`)
+    },
+    error: function () {
+        console.error(`error:\t${data}`)
+    }
+}
+
+const obtainSingingCertificate = () => {
+    if (fs.existsSync(SIGN_KEY_PATH)) {
+        return fs.readFileSync(SIGN_KEY_PATH)
+        //} else if ( ) // TODO: check for the database file
+    } else {
+        let errorString = 'There\'s no uploaded PEM private key for signing. ' +
+            'Please upload a signing certificate next to the source as "signkey.pem" ' +
+            'or paste the content at the admin page!'
+
+        logger.error(errorString)
+        throw new Error(errorString)
     }
 }
 
 // RSA decrypter
-const decrypter = new rsa(fs.readFileSync('./signkey.pem'),
+const decrypter = new rsa(obtainSingingCertificate(),
     'pkcs1-private-pem', {
         encryptionScheme: 'pkcs1',
         signingScheme: 'md5'
     })
+
 
 /**
  * Request Ticket implementation
@@ -37,7 +58,7 @@ const handleRequestTicket = (req, res, next) => {
     logger.info(`Request ticket request received from: ${req.query.userName}`, {query: req.query})
 
     // let username = req.query.userName;
-    const salt = req.query.salt;
+    const salt = req.query.salt
 
     let username = authenticate(req.query) // Authenticate the user
 
@@ -54,7 +75,7 @@ const handleRequestTicket = (req, res, next) => {
         return
     }
 
-    let prolongation_period = '607875500';
+    let prolongation_period = '607875500'
 
     let xml_content = xml([{
         ObtainTicketResponse: [{
@@ -72,7 +93,7 @@ const handleRequestTicket = (req, res, next) => {
         }]
     }])
 
-    signAndSend(xml_content, res);
+    signAndSend(xml_content, res)
 }
 
 /**
@@ -99,8 +120,8 @@ const handleReleaseTicket = (req, res, next) => {
 
     const xml_data = xml([{
         ReleaseTicketResponse: [{
-                message: ''
-            },
+            message: ''
+        },
             {
                 responseCode: 'OK'
             },
@@ -146,15 +167,16 @@ const handlePing = (req, res, next) => {
         }, {
             salt: salt
         }]
-    }]);
+    }])
 
     signAndSend(xml_content, res)
 }
 
 /**
  * TODO: dig around whats this action and why not ping is the action now?!
- * @param {string} xml_content the XML content as string
- * @param {Response} res the express's response object
+ * @param {req} req Express's request object
+ * @param {res} res Express's response object
+ * @param {callback} next The next callback to continue processing
  */
 const handleProlongTicket = function (req, res, next) {
     logger.info(`Prolong ticket request received from: ${req.query.userName}`, {query: req.query})
@@ -169,7 +191,7 @@ const handleProlongTicket = function (req, res, next) {
         }, {
             ticketId: req.query.ticketId
         }]
-    }]);
+    }])
 
     signAndSend(xml_content, res)
 }
@@ -194,10 +216,10 @@ const signAndSend = function (xml_content, res) {
 const authenticate = function (query) {
     const filename = path.join(__dirname, '../permissions.json')
 
-    if ( fs.existsSync(filename) ) {
+    if (fs.existsSync(filename)) {
         const obj = JSON.parse(fs.readFileSync(filename))
 
-        if ( obj[query.userName] ) {
+        if (obj[query.userName]) {
             return obj[query.userName].alias // Set alias to '' to prevent the app to register
         }
     } else {
