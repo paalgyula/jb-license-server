@@ -5,7 +5,7 @@
  * @version 1.0
  * @author  https://github.com/paalgyula/
  * @updated 2018-03-07
- * @link    www.paalgyula.com
+ * @link    'www.paalgyula.com'
  */
 'use strict'
 
@@ -33,7 +33,7 @@ const decrypter = new rsa(fs.readFileSync('./signkey.pem'),
  * @param {res} res Express's response object
  * @param {callback} next The next callback to continue processing
  */
-const handleRequestTicket = function (req, res, next) {
+const handleRequestTicket = (req, res, next) => {
     logger.info(`Request ticket request received from: ${req.query.userName}`, {query: req.query})
 
     // let username = req.query.userName;
@@ -81,7 +81,7 @@ const handleRequestTicket = function (req, res, next) {
  * @param {res} res Express's response object
  * @param {callback} next The next callback to continue processing
  */
-const handleReleaseTicket = function (req, res, next) {
+const handleReleaseTicket = (req, res, next) => {
     //
     // Request: /rpc/releaseTicket.action?
     // buildNumber=2017.2.3+Build+PY-172.3968.37
@@ -116,12 +116,13 @@ const handleReleaseTicket = function (req, res, next) {
 }
 
 /**
+ * @deprecated Handleping may renamed to
  * Handling ping to not release the tickets automatically
  * @param {req} req Express's request object
  * @param {res} res Express's response object
  * @param {callback} next The next callback to continue processing
  */
-const handlePing = function(req, res, next) {
+const handlePing = (req, res, next) => {
     // /rpc/ping.action?
     // buildNumber=2017.2.3+Build+PY-172.3968.37
     // &clientVersion=4
