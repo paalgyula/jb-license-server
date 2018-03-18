@@ -12,7 +12,6 @@
 const rsa = require('node-rsa')
 const xml = require('xml')
 const fs = require('fs')
-const path = require('path')
 const functions = require('firebase-functions')
 const admin = require('firebase-admin')
 
@@ -21,10 +20,10 @@ const SIGN_KEY_PATH = './signkey.pem'
 //const logger = require('../server/logger')
 const logger = {
     info: function (data) {
-        console.log(`info:\t${data}`)
+        console.log(`${data}`)
     },
     error: function (data) {
-        console.error(`error:\t${data}`)
+        console.error(`${data}`)
     }
 }
 
@@ -199,6 +198,10 @@ const signAndSend = (xml_content, res) => {
     }
 }
 
+/**
+ * Sending and raising the certificate error
+ * @param errorObject
+ */
 const certError = (errorObject) => {
     let errorString = 'There\'s no uploaded PEM private key for signing. ' +
         'Please upload a signing certificate next to the source as "signkey.pem" ' +
@@ -208,6 +211,12 @@ const certError = (errorObject) => {
     throw new Error(errorString)
 }
 
+/**
+ * Sending the signed response to the client
+ * @param cert the certificate as string
+ * @param xml_content the XML what should be signed
+ * @param res express's response object
+ */
 const send = (cert, xml_content, res) => {
     const signer = new rsa(cert,
         'pkcs1-private-pem', {
@@ -222,23 +231,13 @@ const send = (cert, xml_content, res) => {
 }
 
 /**
- * FIXME: This method is just a temporary implementation of login system.
+ * This method checks for the firebase database for users
  * @param query the query params at obtainticket.action
+ * @param success success callback
+ * @param failure failure callback when the user doesnt exists or the alias is blank/empty
  * @returns {string} username
  */
 const authenticate = (query, success, failure) => {
-    // const filename = path.join(__dirname, '../permissions.json')
-    //
-    // if (fs.existsSync(filename)) {
-    //     const obj = JSON.parse(fs.readFileSync(filename))
-    //
-    //     if (obj[query.userName]) {
-    //         return obj[query.userName].alias // Set alias to '' to prevent the app to register
-    //     }
-    // } else {
-    //     logger.info('permissions.json file doesn\'t exists...')
-    // }
-
     admin.database().ref('users/' + query.userName).once('value', snapshot => {
         if (snapshot.exists() && snapshot.val().alias !== '') {
             success( snapshot.val().alias )
