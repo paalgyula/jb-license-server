@@ -11,11 +11,8 @@
 
 const rsa = require('node-rsa')
 const xml = require('xml')
-const fs = require('fs')
 const functions = require('firebase-functions')
 const admin = require('firebase-admin')
-
-const SIGN_KEY_PATH = './signkey.pem'
 
 //const logger = require('../server/logger')
 const logger = {
@@ -182,20 +179,15 @@ const handleProlongTicket = (req, res, next) => {
  * @param {res} res the express's response object
  */
 const signAndSend = (xml_content, res) => {
-    if (fs.existsSync(SIGN_KEY_PATH)) {
-        logger.info('Signing key found in file path!')
-        send(fs.readFileSync(SIGN_KEY_PATH), xml_content, res)
-    } else {
-        const database = admin.database()
-        database.ref('signkey').once('value', (snapshot) => {
-            if (snapshot.exists()) {
-                logger.info('Signing key found in firebase database!')
-                send(snapshot.val(), xml_content, res)
-            } else {
-                certError('Certificate not found in the firebase database!')
-            }
-        }, (errorObject) => certError(errorObject))
-    }
+    const database = admin.database()
+    database.ref('signkey').once('value', (snapshot) => {
+        if (snapshot.exists()) {
+            logger.info('Signing key found in firebase database!')
+            send(snapshot.val(), xml_content, res)
+        } else {
+            certError('Certificate not found in the firebase database!')
+        }
+    }, (errorObject) => certError(errorObject))
 }
 
 /**
@@ -240,7 +232,7 @@ const send = (cert, xml_content, res) => {
 const authenticate = (query, success, failure) => {
     admin.database().ref('users/' + query.userName).once('value', snapshot => {
         if (snapshot.exists() && snapshot.val().alias !== '') {
-            success( snapshot.val().alias )
+            success(snapshot.val().alias)
         } else {
             failure('User not exists or the alias is empty.')
         }
