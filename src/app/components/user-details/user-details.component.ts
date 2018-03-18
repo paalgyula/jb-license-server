@@ -9,7 +9,7 @@ import {Subscription} from "rxjs/Subscription";
     styles: []
 })
 export class UserDetailsComponent implements OnInit, OnDestroy {
-    private user: User;
+    public user: User;
 
     private sub: Subscription;
 

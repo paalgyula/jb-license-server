@@ -7,7 +7,7 @@ import {DOCUMENT} from "@angular/common";
     styles: []
 })
 export class DashboardComponent implements OnInit {
-    private hostname: string;
+    public hostname: string;
 
     constructor(@Inject(DOCUMENT) private document) {
         this.hostname = document.location.protocol +'//'+ document.location.hostname;
