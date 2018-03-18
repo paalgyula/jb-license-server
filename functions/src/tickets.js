@@ -39,7 +39,7 @@ const handleRequestTicket = (req, res, next) => {
     // let username = req.query.userName;
     const salt = req.query.salt
 
-    authenticate(req.query, (username) => {
+    authenticate(req, (username) => {
         let prolongation_period = '607875500'
 
         let xml_content = xml([{
@@ -182,10 +182,9 @@ const signAndSend = (xml_content, res) => {
     const database = admin.database()
     database.ref('signkey').once('value', (snapshot) => {
         if (snapshot.exists()) {
-            logger.info('Signing key found in firebase database!')
             send(snapshot.val(), xml_content, res)
         } else {
-            certError('Certificate not found in the firebase database!')
+            certError('Certificate not found in the firebase database! ref:signkey')
         }
     }, (errorObject) => certError(errorObject))
 }
@@ -224,15 +223,39 @@ const send = (cert, xml_content, res) => {
 
 /**
  * This method checks for the firebase database for users
- * @param query the query params at obtainticket.action
+ //* @param req the query params at obtainticket.action
+ * @param req express's request object
  * @param success success callback
  * @param failure failure callback when the user doesnt exists or the alias is blank/empty
  * @returns {string} username
  */
-const authenticate = (query, success, failure) => {
-    admin.database().ref('users/' + query.userName).once('value', snapshot => {
-        if (snapshot.exists() && snapshot.val().alias !== '') {
-            success(snapshot.val().alias)
+const authenticate = (req, success, failure) => {
+    const username = req.query.userName;
+    admin.database().ref(`users/${username}/alias`).once('value', snapshot => {
+        if (snapshot.exists() && snapshot.val() !== '') {
+            success(snapshot.val())
+
+            let newLoginKey = admin.database()
+                .ref()
+                .child(`users/${username}/logins`)
+                .push()
+                .key;
+
+            let updates = {};
+            let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+
+            updates[`/users/${username}/logins/${newLoginKey}`] = {
+                username: username,
+                ip: ip,
+                hostName: req.query.hostName,
+                buildNumber: req.query.buildNumber,
+                time: new Date()
+            }
+
+            admin
+                .database()
+                .ref()
+                .update(updates);
         } else {
             failure('User not exists or the alias is empty.')
         }
