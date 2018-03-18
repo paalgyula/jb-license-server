@@ -13,6 +13,8 @@ const rsa = require('node-rsa')
 const xml = require('xml')
 const fs = require('fs')
 const path = require('path')
+const functions = require('firebase-functions')
+const admin = require('firebase-admin')
 
 const SIGN_KEY_PATH = './signkey.pem'
 
@@ -21,32 +23,13 @@ const logger = {
     info: function (data) {
         console.log(`info:\t${data}`)
     },
-    error: function () {
+    error: function (data) {
         console.error(`error:\t${data}`)
     }
 }
 
-const obtainSingingCertificate = () => {
-    if (fs.existsSync(SIGN_KEY_PATH)) {
-        return fs.readFileSync(SIGN_KEY_PATH)
-        //} else if ( ) // TODO: check for the database file
-    } else {
-        let errorString = 'There\'s no uploaded PEM private key for signing. ' +
-            'Please upload a signing certificate next to the source as "signkey.pem" ' +
-            'or paste the content at the admin page!'
-
-        logger.error(errorString)
-        throw new Error(errorString)
-    }
-}
-
-// RSA decrypter
-const decrypter = new rsa(obtainSingingCertificate(),
-    'pkcs1-private-pem', {
-        encryptionScheme: 'pkcs1',
-        signingScheme: 'md5'
-    })
-
+logger.info('Initializing firebase app...')
+admin.initializeApp(functions.config().firebase)
 
 /**
  * Request Ticket implementation
@@ -60,9 +43,28 @@ const handleRequestTicket = (req, res, next) => {
     // let username = req.query.userName;
     const salt = req.query.salt
 
-    let username = authenticate(req.query) // Authenticate the user
+    authenticate(req.query, (username) => {
+        let prolongation_period = '607875500'
 
-    if (!username || !username.trim()) { // If username is empty, dropping the user
+        let xml_content = xml([{
+            ObtainTicketResponse: [{
+                message: ''
+            }, {
+                prolongationPeriod: prolongation_period
+            }, {
+                responseCode: 'OK'
+            }, {
+                salt: salt
+            }, {
+                ticketId: 1
+            }, {
+                ticketProperties: `licensee=${username}\tlicenseType=0\t` // TODO: dig around licenseType
+            }]
+        }])
+
+        signAndSend(xml_content, res)
+    }, (message) => {
+        logger.error(message)
         signAndSend(xml([{
             ObtainTicketResponse: [{
                 message: 'Access denied!'
@@ -72,28 +74,7 @@ const handleRequestTicket = (req, res, next) => {
                 responseCode: 'ERROR'
             }]
         }]), res)
-        return
-    }
-
-    let prolongation_period = '607875500'
-
-    let xml_content = xml([{
-        ObtainTicketResponse: [{
-            message: ''
-        }, {
-            prolongationPeriod: prolongation_period
-        }, {
-            responseCode: 'OK'
-        }, {
-            salt: salt
-        }, {
-            ticketId: 1
-        }, {
-            ticketProperties: `licensee=${username}\tlicenseType=0\t` // TODO: dig around licenseType
-        }]
-    }])
-
-    signAndSend(xml_content, res)
+    }) // Authenticate the user
 }
 
 /**
@@ -178,7 +159,7 @@ const handlePing = (req, res, next) => {
  * @param {res} res Express's response object
  * @param {callback} next The next callback to continue processing
  */
-const handleProlongTicket = function (req, res, next) {
+const handleProlongTicket = (req, res, next) => {
     logger.info(`Prolong ticket request received from: ${req.query.userName}`, {query: req.query})
 
     let xml_content = xml([{
@@ -201,8 +182,40 @@ const handleProlongTicket = function (req, res, next) {
  * @param {string} xml_content the XML content as string
  * @param {res} res the express's response object
  */
-const signAndSend = function (xml_content, res) {
-    let xml_signature = decrypter.sign(xml_content, 'hex')
+const signAndSend = (xml_content, res) => {
+    if (fs.existsSync(SIGN_KEY_PATH)) {
+        logger.info('Signing key found in file path!')
+        send(fs.readFileSync(SIGN_KEY_PATH), xml_content, res)
+    } else {
+        const database = admin.database()
+        database.ref('signkey').once('value', (snapshot) => {
+            if (snapshot.exists()) {
+                logger.info('Signing key found in firebase database!')
+                send(snapshot.val(), xml_content, res)
+            } else {
+                certError('Certificate not found in the firebase database!')
+            }
+        }, (errorObject) => certError(errorObject))
+    }
+}
+
+const certError = (errorObject) => {
+    let errorString = 'There\'s no uploaded PEM private key for signing. ' +
+        'Please upload a signing certificate next to the source as "signkey.pem" ' +
+        'or paste the content at the admin page!'
+
+    logger.error(errorString + " - " + JSON.stringify(errorObject))
+    throw new Error(errorString)
+}
+
+const send = (cert, xml_content, res) => {
+    const signer = new rsa(cert,
+        'pkcs1-private-pem', {
+            encryptionScheme: 'pkcs1',
+            signingScheme: 'md5'
+        })
+
+    let xml_signature = signer.sign(xml_content, 'hex')
     res.status(200)
         .header("Content-Type", "text/plain; charset=utf-8")
         .end(`<!-- ${xml_signature} -->\n${xml_content}`)
@@ -213,20 +226,26 @@ const signAndSend = function (xml_content, res) {
  * @param query the query params at obtainticket.action
  * @returns {string} username
  */
-const authenticate = function (query) {
-    const filename = path.join(__dirname, '../permissions.json')
+const authenticate = (query, success, failure) => {
+    // const filename = path.join(__dirname, '../permissions.json')
+    //
+    // if (fs.existsSync(filename)) {
+    //     const obj = JSON.parse(fs.readFileSync(filename))
+    //
+    //     if (obj[query.userName]) {
+    //         return obj[query.userName].alias // Set alias to '' to prevent the app to register
+    //     }
+    // } else {
+    //     logger.info('permissions.json file doesn\'t exists...')
+    // }
 
-    if (fs.existsSync(filename)) {
-        const obj = JSON.parse(fs.readFileSync(filename))
-
-        if (obj[query.userName]) {
-            return obj[query.userName].alias // Set alias to '' to prevent the app to register
+    admin.database().ref('users/' + query.userName).once('value', snapshot => {
+        if (snapshot.exists() && snapshot.val().alias !== '') {
+            success( snapshot.val().alias )
+        } else {
+            failure('User not exists or the alias is empty.')
         }
-    } else {
-        logger.info('permissions.json file doesn\'t exists...')
-    }
-
-    return query.userName
+    })
 }
 
 module.exports = {
