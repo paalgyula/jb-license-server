@@ -6,6 +6,7 @@ export class User {
     name: string
     alias: string
     seats: number
+    logins?: any[]
 }
 
 @Injectable()
@@ -55,5 +56,23 @@ export class UsersService {
      */
     public delUser(username: string): void {
         this.usersRef.child(username).remove();
+    }
+
+    getUser(username: string) : Observable<User> {
+        return Observable.create(observer => {
+            this.usersRef.child(username).on('value', (snapshot => {
+                let user = snapshot.val();
+                user.name = username;
+
+                let logins = []
+                // Mapping
+                for (const key in user.logins) {
+                    logins.push(user.logins[key])
+                }
+
+                user.logins = logins
+                observer.next(user);
+            }))
+        })
     }
 }

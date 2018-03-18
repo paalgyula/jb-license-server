@@ -11,12 +11,14 @@ import { UsersListComponent } from '../../components/users-list/users-list.compo
 import { UserFormComponent } from '../../components/user-form/user-form.component';
 import { AuthGuard } from '../../auth.guard';
 import { LogviewComponent } from '../../components/logview/logview.component';
+import {UserDetailsComponent} from "../../components/user-details/user-details.component";
 
 const routes: Routes = [{
     path: '', canActivate: [AuthGuard],  component: HomeComponent, children: [
         { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
         { path: 'dashboard', component: DashboardComponent },
         { path: 'users', component: UsersComponent },
+        { path: 'user/:username', component: UserDetailsComponent },
         { path: 'logs', component: LogviewComponent }
     ]
 }];
@@ -37,6 +39,7 @@ const routes: Routes = [{
         UsersComponent,
         UsersListComponent,
         UserFormComponent,
+        UserDetailsComponent,
         LogviewComponent
     ]
 })

@@ -1,0 +1,31 @@
+<div class="main-content"  *ngIf="user">
+  <div class="container-fluid">
+    <div class="col-sm-12">
+      <div class="card">
+        <div class="card-header" data-background-color="red">
+          <h3 class="title">{{user.alias}}</h3>
+          <i class="category">({{user.name}})</i>
+        </div>
+        <div class="card-content">
+          <table *ngIf="user && user.logins" class="table table-responsive">
+            <tr>
+              <th>Client</th>
+              <th>Hostname</th>
+              <th>IP</th>
+              <th>Time</th>
+            </tr>
+            <tr *ngFor="let login of user.logins">
+              <td [innerHtml]="login.buildNumber | buildfilter"></td>
+              <td><i>{{login.hostName}}</i></td>
+              <td [innerHtml]="login.ip | ipfilter | async"></td>
+              <td>{{login.time | date:'mediumDate'}}<br/>{{login.time | date:'mediumTime'}}</td>
+            </tr>
+          </table>
+        </div>
+        <div class="card-footer">
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
