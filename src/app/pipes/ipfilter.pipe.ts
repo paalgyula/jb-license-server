@@ -14,7 +14,7 @@ export class IpfilterPipe implements PipeTransform {
         const ip = value.trim().split(',', 1);
         return Observable.create(observer => {
             observer.next(`<b>${ip}</b>`)
-            this.httpClient.get<any>('http://freegeoip.net/json/' + ip) // TODO: map the response to avoid any object
+            this.httpClient.get<any>('https://freegeoip.net/json/' + ip) // TODO: map the response to avoid any object
                 .subscribe(data  => {
                     console.log(data)
                     observer.next(`<img src="/assets/img/flag/16/${data.country_code.toLowerCase()}.png" class="flag"/><b>${ip}</b> - ${data.region_name}`)

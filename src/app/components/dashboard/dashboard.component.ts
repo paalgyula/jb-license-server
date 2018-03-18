@@ -11,7 +11,7 @@ export class DashboardComponent implements OnInit {
 
     constructor(@Inject(DOCUMENT) private document) {
         this.hostname = document.location.protocol +'//'+ document.location.hostname;
-        if ( document.location.port !== 443 || document.local.port !== 80 )
+        if ( document.location.port && (document.location.port !== 443 || document.local.port !== 80))
             this.hostname += `:${document.location.port}`;
     }
 
